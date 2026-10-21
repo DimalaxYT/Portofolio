@@ -12,48 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DEFAULT_CATEGORIES,
-  categoryIconKey,
-  parseCategories,
-} from "@/lib/types";
-import {
-  Box,
-  Clapperboard,
-  Gamepad2,
-  Globe,
-  Shapes as ShapesIcon,
-  ShieldCheck,
-} from "lucide-react";
+import { CategoryIcon } from "./category-icon";
 
-const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  box: Box,
-  gamepad: Gamepad2,
-  clapperboard: Clapperboard,
-  shield: ShieldCheck,
-  globe: Globe,
-  shapes: ShapesIcon,
-};
-
-export function CategoryIcon({
-  name,
-  className,
-}: {
-  name: string;
-  className?: string;
-}) {
-  const Icon = ICONS[categoryIconKey(name)] ?? ShapesIcon;
-  return <Icon className={className} />;
-}
-
-async function fetchCategories(): Promise<string[]> {
-  const res = await fetch("/api/settings");
-  if (!res.ok) return DEFAULT_CATEGORIES;
-  const data = await res.json();
-  return parseCategories(data?.categories);
-}
+import { fetchCategories } from "@/lib/api-client";
 
 /**
  * Gestion CRUD des catégories : ajouter, renommer, supprimer.
@@ -67,7 +29,11 @@ export function CategoriesPanel() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const { data: categories } = useQuery({
+  const {
+    data: categories,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
   });
@@ -103,7 +69,13 @@ export function CategoriesPanel() {
   });
 
   const renameMutation = useMutation({
-    mutationFn: async ({ old: oldName, new: newName }: { old: string; new: string }) => {
+    mutationFn: async ({
+      old: oldName,
+      new: newName,
+    }: {
+      old: string;
+      new: string;
+    }) => {
       const res = await fetch("/api/categories", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -147,7 +119,11 @@ export function CategoriesPanel() {
 
   const list = categories ?? [];
   const busy =
-    addMutation.isPending || renameMutation.isPending || deleteMutation.isPending;
+    isLoading ||
+    isError ||
+    addMutation.isPending ||
+    renameMutation.isPending ||
+    deleteMutation.isPending;
 
   const submitAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +155,11 @@ export function CategoriesPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isError && (
+          <p role="alert" className="text-destructive">
+            Impossible de charger les catégories.
+          </p>
+        )}
         <form onSubmit={submitAdd} className="flex gap-2">
           <Input
             value={newName}

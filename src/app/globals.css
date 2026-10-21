@@ -267,3 +267,13 @@
     animation: none;
   }
 }
+
+:root {
+  --font-geist-sans: "Geist Variable", sans-serif;
+  --font-geist-mono: "Geist Mono Variable", monospace;
+  --font-playfair: "Playfair Display Variable", serif;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

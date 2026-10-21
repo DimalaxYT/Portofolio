@@ -69,7 +69,7 @@ export function parseCategories(raw: string | undefined | null): string[] {
 export const CATEGORY_META: Record<string, { icon: string }> = {
   "3d": { icon: "box" },
   "roblox studio": { icon: "gamepad" },
-  "vidéo": { icon: "clapperboard" },
+  vidéo: { icon: "clapperboard" },
   video: { icon: "clapperboard" },
   cyberdéfense: { icon: "shield" },
   cyberdefense: { icon: "shield" },
@@ -87,10 +87,25 @@ export function categoryIconKey(name: string): string {
  * complètes (http/https) sont conservées telles quelles.
  */
 export function toClickableUrl(raw: string | null): string | null {
-  const v = raw?.trim();
-  if (!v) return null;
-  if (/^https?:\/\//i.test(v)) return v;
-  // Domaine plausible : exemple.fr, www.exemple.com, sous.exemple.fr/chemin
-  if (/^(www\.)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(v)) return `https://${v}`;
-  return null;
+  const value = raw?.trim();
+  if (!value || /[\s\\\u0000-\u001f]/.test(value)) return null;
+  const candidate = /^https?:\/\//i.test(value)
+    ? value
+    : /^(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:[/?#].*)?$/.test(value)
+      ? `https://${value}`
+      : null;
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    if (
+      !["http:", "https:"].includes(url.protocol) ||
+      !url.hostname ||
+      url.username ||
+      url.password
+    )
+      return null;
+    return url.href;
+  } catch {
+    return null;
+  }
 }

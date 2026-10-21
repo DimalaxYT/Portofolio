@@ -1,23 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import "@fontsource-variable/geist/index.css";
+import "@fontsource-variable/geist-mono/index.css";
+import "@fontsource-variable/playfair-display/index.css";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
 
 /* viewport-fit=cover : les safe-areas iOS (encoche/barre gestuelle) sont
    disponibles via env(safe-area-inset-*) dans les composants. */
@@ -36,7 +23,7 @@ export const metadata: Metadata = {
   description:
     "Portfolio de sites web : découvrez une sélection de projets web conçus et développés — sites vitrines, e-commerce et applications.",
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
 };
 
@@ -47,9 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased bg-background text-foreground`}
-      >
+      <body className="antialiased bg-background text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
         <Toaster />
       </body>

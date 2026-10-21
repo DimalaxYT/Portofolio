@@ -1,13 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import { createClient, type Client } from "@libsql/client";
+import { databaseConfig } from "../../scripts/db-config.mjs";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+const globalDb = globalThis as typeof globalThis & { portfolioDb?: Client };
+
+/** Lazy initialization also allows `next build` without production secrets. */
+export function getDb(): Client {
+  return (globalDb.portfolioDb ??= createClient(databaseConfig()));
 }
-
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ['query'],
-  })
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db

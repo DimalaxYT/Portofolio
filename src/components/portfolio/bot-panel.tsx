@@ -58,16 +58,30 @@ function formatDateTime(iso: string | null): string {
   return dateTimeFmt.format(new Date(iso));
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <span className="shrink-0 text-muted-foreground">{label}</span>
-      <span className="min-w-0 truncate text-right font-medium">{children}</span>
+      <span className="min-w-0 truncate text-right font-medium">
+        {children}
+      </span>
     </div>
   );
 }
 
-function StatusDot({ status, enabled }: { status: BotLastStatus; enabled: boolean }) {
+function StatusDot({
+  status,
+  enabled,
+}: {
+  status: BotLastStatus;
+  enabled: boolean;
+}) {
   const color = !enabled
     ? "bg-muted-foreground/40"
     : status === "ok"
@@ -82,7 +96,9 @@ function StatusDot({ status, enabled }: { status: BotLastStatus; enabled: boolea
           className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${color}`}
         />
       )}
-      <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${color}`} />
+      <span
+        className={`relative inline-flex h-2.5 w-2.5 rounded-full ${color}`}
+      />
     </span>
   );
 }
@@ -104,7 +120,9 @@ export function BotPanel() {
         | (PingResponse & { error?: string })
         | null;
       if (!res.ok && !data) {
-        throw new Error(`Impossible de contacter le serveur (HTTP ${res.status})`);
+        throw new Error(
+          `Impossible de contacter le serveur (HTTP ${res.status})`,
+        );
       }
       if (data && !data.ok && data.error && !data.httpStatus) {
         // Erreur renvoyée par le serveur (ex. secret requis)
@@ -146,21 +164,19 @@ export function BotPanel() {
           Bot de ping
         </CardTitle>
         <CardDescription>
-          Envoie automatiquement un ping au webhook configuré dans les
-          variables d&apos;environnement (fichier .env).
+          Envoie un ping au webhook configuré dans les variables
+          d’environnement. Sur Render, utilisez de préférence un cron externe
+          authentifié.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <Row label="État">
           <span className="inline-flex items-center gap-2">
-            <StatusDot
-              enabled={enabled}
-              status={bot?.lastStatus ?? "idle"}
-            />
+            <StatusDot enabled={enabled} status={bot?.lastStatus ?? "idle"} />
             {enabled
               ? bot?.running
                 ? `Actif · toutes les ${bot.intervalMinutes} min`
-                : "Configuré · démarre au redémarrage"
+                : "Configuré · cron externe / test manuel"
               : "Désactivé"}
           </span>
         </Row>
@@ -179,7 +195,7 @@ export function BotPanel() {
         {enabled && bot?.running && (
           <Row label="Prochain ping">{formatDateTime(bot.nextRunAt)}</Row>
         )}
-        <Row label="Historique">
+        <Row label="Historique de cette instance">
           {bot
             ? `${bot.totalPings} ping${bot.totalPings > 1 ? "s" : ""} · ${bot.totalErrors} erreur${bot.totalErrors > 1 ? "s" : ""}`
             : "—"}
@@ -208,7 +224,10 @@ export function BotPanel() {
         {bot?.secretProtected && (
           <p className="text-xs text-muted-foreground">
             Déclenchement externe protégé par{" "}
-            <code className="rounded bg-muted px-1 py-0.5">PING_BOT_SECRET</code>.
+            <code className="rounded bg-muted px-1 py-0.5">
+              PING_BOT_SECRET
+            </code>
+            .
           </p>
         )}
       </CardContent>
