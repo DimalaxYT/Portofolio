@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Taskly — Gérez vos projets sereinement</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Carlito', 'Noto Sans', sans-serif; background: #f6f8f8; color: #122b28; }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #fff; border-bottom: 1px solid #e4eae9; }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 800; }
+  .mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #0e9f8a, #0b7c6e); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 15px; }
+  nav { display: flex; gap: 28px; font-size: 14.5px; font-weight: 600; color: #5b6b69; }
+  nav b { color: #122b28; }
+  .cta { background: #0e9f8a; color: #fff; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; }
+  .cta.ghost { background: #fff; color: #122b28; border: 1.5px solid #d6dedd; }
+
+  .hero { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 48px; padding: 64px 40px 56px; align-items: center; }
+  .kicker { display: inline-block; background: #e2f4f0; color: #0b7c6e; font-size: 12px; font-weight: 800; letter-spacing: 1.5px; padding: 7px 14px; border-radius: 20px; }
+  h1 { font-size: 47px; line-height: 1.06; letter-spacing: -1.2px; margin: 18px 0 16px; font-weight: 800; }
+  h1 em { color: #0e9f8a; font-style: normal; }
+  .sub { font-size: 16.5px; line-height: 1.6; color: #5b6b69; max-width: 430px; }
+  .ctas { margin-top: 28px; display: flex; gap: 12px; }
+  .ctas .cta { padding: 13px 28px; font-size: 15px; }
+  .trust { margin-top: 26px; display: flex; align-items: center; gap: 14px; font-size: 13px; color: #5b6b69; }
+  .avatars { display: flex; }
+  .av { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; margin-left: -8px; }
+  .av:first-child { margin-left: 0; }
+  .a1 { background: linear-gradient(135deg, #f2b35c, #d97a2b); }
+  .a2 { background: linear-gradient(135deg, #7fc8a9, #3f8f6e); }
+  .a3 { background: linear-gradient(135deg, #9aa7e0, #5c6bb2); }
+  .a4 { background: linear-gradient(135deg, #e08f9c, #b25466); }
+
+  .shot { background: #fff; border-radius: 16px; box-shadow: 0 30px 70px rgba(18,43,40,.14), 0 4px 14px rgba(18,43,40,.06); overflow: hidden; border: 1px solid #e4eae9; }
+  .bar { display: flex; align-items: center; gap: 6px; padding: 11px 14px; background: #f0f3f3; border-bottom: 1px solid #e4eae9; }
+  .rd { width: 9px; height: 9px; border-radius: 50%; }
+  .url { margin-left: 10px; background: #fff; border: 1px solid #e4eae9; border-radius: 6px; font-size: 11px; color: #8b9795; padding: 4px 12px; flex: 1; }
+  .app { display: grid; grid-template-columns: 148px 1fr; }
+  .side { background: #fbfcfc; border-right: 1px solid #e9edec; padding: 16px 12px; font-size: 12.5px; }
+  .side .sec { color: #9aa5a3; font-size: 10px; letter-spacing: 1.2px; margin: 10px 6px 6px; }
+  .item { padding: 7px 10px; border-radius: 7px; color: #4c5a58; margin-bottom: 2px; }
+  .item.on { background: #e2f4f0; color: #0b7c6e; font-weight: 700; }
+  .main { padding: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .kpi { border: 1px solid #e9edec; border-radius: 10px; padding: 12px; }
+  .kpi .lb { font-size: 10.5px; color: #8b9795; }
+  .kpi .vl { font-size: 19px; font-weight: 800; margin-top: 3px; }
+  .kpi .up { color: #0e9f8a; font-size: 10.5px; font-weight: 700; }
+  .chart { border: 1px solid #e9edec; border-radius: 10px; padding: 12px 14px; }
+  .chart .t { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 7px; height: 92px; }
+  .b { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #35c0aa, #0e9f8a); }
+  .b.g { background: #e2efed; }
+
+  .feat-sec { background: #fff; border-top: 1px solid #e4eae9; padding: 44px 40px 40px; }
+  .feat-head { text-align: center; font-size: 26px; font-weight: 800; letter-spacing: -0.6px; margin-bottom: 28px; }
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1080px; margin: 0 auto; }
+  .feat { border: 1px solid #e4eae9; border-radius: 12px; padding: 20px; background: #fbfcfc; }
+  .ico { width: 34px; height: 34px; border-radius: 9px; background: #e2f4f0; color: #0b7c6e; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; margin-bottom: 12px; }
+  .feat h3 { font-size: 15.5px; font-weight: 800; margin-bottom: 6px; }
+  .feat p { font-size: 12.5px; line-height: 1.55; color: #5b6b69; }
+  footer { background: #122b28; color: #9db5b1; display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; font-size: 12.5px; }
+  footer .logo { color: #fff; font-size: 15px; }
+  footer .mark { width: 20px; height: 20px; font-size: 11px; border-radius: 6px; }
+
+  .logos { display: flex; justify-content: center; gap: 46px; padding: 8px 0 40px; color: #9aa5a3; font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo"><div class="mark">T</div>Taskly</div>
+    <nav><b>Produit</b><span>Tarifs</span><span>Intégrations</span><span>Blog</span></nav>
+    <div style="display:flex; gap:10px;"><div class="cta ghost">Connexion</div><div class="cta">Essai gratuit</div></div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="kicker">NOUVEAU — VUE CALENDRIER</div>
+      <h1>Gérez vos projets <em>sereinement</em>.</h1>
+      <p class="sub">Taskly réunit tâches, équipes et échéances dans un espace unique. Vos projets avancent, votre tête reste légère.</p>
+      <div class="ctas">
+        <div class="cta">Commencer — c'est gratuit</div>
+        <div class="cta ghost">Voir la démo</div>
+      </div>
+      <div class="trust">
+        <div class="avatars"><div class="av a1"></div><div class="av a2"></div><div class="av a3"></div><div class="av a4"></div></div>
+        <span><b>12 000+ équipes</b> organisent leurs projets avec Taskly</span>
+      </div>
+    </div>
+
+    <div class="shot">
+      <div class="bar">
+        <div class="rd" style="background:#f26d5f;"></div>
+        <div class="rd" style="background:#f2bf4f;"></div>
+        <div class="rd" style="background:#57c26b;"></div>
+        <div class="url">app.taskly.io/projets</div>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="item on">Tableau de bord</div>
+          <div class="item">Mes projets</div>
+          <div class="item">Calendrier</div>
+          <div class="sec">ÉQUIPES</div>
+          <div class="item">Design</div>
+          <div class="item">Développement</div>
+          <div class="item">Marketing</div>
+          <div class="sec">ESPACE</div>
+          <div class="item">Paramètres</div>
+        </div>
+        <div class="main">
+          <div class="kpis">
+            <div class="kpi"><div class="lb">TÂCHES ACTIVES</div><div class="vl">148</div><div class="up">▲ 12 %</div></div>
+            <div class="kpi"><div class="lb">EN RETARD</div><div class="vl">7</div><div class="up" style="color:#c2453a;">▼ 3</div></div>
+            <div class="kpi"><div class="lb">TERMINÉES / S</div><div class="vl">62</div><div class="up">▲ 8 %</div></div>
+          </div>
+          <div class="chart">
+            <div class="t">Avancement de l'équipe — 14 jours</div>
+            <div class="bars">
+              <div class="b g" style="height:38%;"></div>
+              <div class="b" style="height:52%;"></div>
+              <div class="b g" style="height:44%;"></div>
+              <div class="b" style="height:66%;"></div>
+              <div class="b" style="height:58%;"></div>
+              <div class="b g" style="height:35%;"></div>
+              <div class="b" style="height:74%;"></div>
+              <div class="b" style="height:82%;"></div>
+              <div class="b g" style="height:48%;"></div>
+              <div class="b" style="height:64%;"></div>
+              <div class="b" style="height:71%;"></div>
+              <div class="b g" style="height:40%;"></div>
+              <div class="b" style="height:88%;"></div>
+              <div class="b" style="height:96%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="logos"><span>◆ Lumine</span><span>▲ Altis</span><span>● Vercora</span><span>■ Monitéa</span><span>✦ Pluria</span></div>
+
+  <section class="feat-sec">
+    <div class="feat-head">Tout ce qu'il faut pour avancer</div>
+    <div class="feats">
+      <div class="feat">
+        <div class="ico">✓</div>
+        <h3>Tâches & sous-tâches</h3>
+        <p>Organisez le travail en listes, tableaux kanban et frises. Chaque équipe voit l'essentiel, sans bruit.</p>
+      </div>
+      <div class="feat">
+        <div class="ico">◷</div>
+        <h3>Échéances intelligentes</h3>
+        <p>Des rappels automatiques et une vue calendrier qui signale les risques de retard avant qu'ils arrivent.</p>
+      </div>
+      <div class="feat">
+        <div class="ico">⇄</div>
+        <h3>Intégrations natives</h3>
+        <p>Slack, GitHub, Notion et Google Drive se connectent en un clic. L'information circule, vous travaillez.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="logo"><div class="mark">T</div>Taskly</div>
+    <span>© 2026 Taskly SAS — Confidentialité · CGU · Contact</span>
+  </footer>
+</body>
+</html>

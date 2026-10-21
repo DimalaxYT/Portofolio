@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nordé — Équipement outdoor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Carlito', 'Noto Sans', sans-serif; background: #ffffff; color: #16181d; }
+  .serif { font-family: 'Tinos', Georgia, serif; }
+
+  .promo { background: #16181d; color: #fff; text-align: center; font-size: 12.5px; letter-spacing: 1px; padding: 9px; }
+  .promo b { color: #ff5c1f; }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 18px 56px; border-bottom: 1px solid #ececef; }
+  .logo { font-size: 23px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: #ff5c1f; }
+  nav { display: flex; gap: 30px; font-size: 15px; color: #4c515c; font-weight: 600; }
+  nav b { color: #16181d; border-bottom: 2px solid #ff5c1f; padding-bottom: 4px; }
+  .actions { display: flex; gap: 18px; align-items: center; font-size: 14px; color: #4c515c; }
+  .cart { position: relative; background: #ff5c1f; color: #fff; border-radius: 24px; padding: 9px 18px; font-weight: 700; font-size: 13.5px; }
+
+  .hero { display: grid; grid-template-columns: 1fr 1.1fr; background: #f4f2ee; overflow: hidden; }
+  .hero-txt { padding: 74px 56px; }
+  .hero-txt .kicker { font-size: 12px; letter-spacing: 3px; color: #ff5c1f; font-weight: 800; }
+  .hero-txt h1 { font-size: 52px; line-height: 1.04; letter-spacing: -1.5px; margin: 16px 0 18px; font-weight: 800; }
+  .hero-txt p { color: #5b616c; font-size: 16.5px; line-height: 1.6; max-width: 400px; }
+  .hero-txt .ctas { margin-top: 30px; display: flex; gap: 12px; }
+  .btn-dark { background: #16181d; color: #fff; padding: 14px 30px; border-radius: 6px; font-weight: 700; font-size: 15px; }
+  .btn-line { border: 2px solid #16181d; padding: 12px 26px; border-radius: 6px; font-weight: 700; font-size: 15px; }
+  .hero-art { position: relative; background: linear-gradient(135deg, #d8d4cb 0%, #b8b2a5 100%); }
+  .peak { position: absolute; bottom: 0; left: 0; right: 0; height: 62%; clip-path: polygon(0 100%, 22% 34%, 40% 62%, 58% 8%, 78% 52%, 100% 26%, 100% 100%); background: linear-gradient(180deg, #6e6a60 0%, #4a4741 100%); }
+  .peak2 { position: absolute; bottom: 0; left: 0; right: 0; height: 40%; clip-path: polygon(0 100%, 18% 55%, 42% 78%, 66% 30%, 100% 66%, 100% 100%); background: #31302c; }
+  .sun { position: absolute; top: 44px; right: 66px; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle, #ffb27a 0%, #ff5c1f 70%); }
+  .float-card { position: absolute; top: 58px; left: 40px; background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 18px 40px rgba(22,24,29,.18); font-size: 12.5px; }
+  .float-card b { font-size: 15px; display: block; }
+
+  .grid-sec { padding: 46px 56px 56px; }
+  .grid-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 26px; }
+  .grid-head h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .grid-head a { color: #ff5c1f; font-size: 14px; font-weight: 700; }
+  .products { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .prod { border: 1px solid #ececef; border-radius: 12px; overflow: hidden; }
+  .ph { height: 150px; position: relative; }
+  .p1 { background: linear-gradient(150deg, #8fa396, #4e6156); }
+  .p2 { background: linear-gradient(150deg, #d9a066, #a4643a); }
+  .p3 { background: linear-gradient(150deg, #9aa7b1, #5d6b77); }
+  .p4 { background: linear-gradient(150deg, #c26d5c, #8a3f33); }
+  .pill { position: absolute; top: 10px; left: 10px; background: #fff; border-radius: 20px; font-size: 10.5px; font-weight: 800; padding: 5px 10px; color: #16181d; }
+  .pill.orange { background: #ff5c1f; color: #fff; }
+  .prod-info { padding: 13px 14px 15px; }
+  .prod-info .cat { font-size: 11px; color: #8b8f98; letter-spacing: 1px; }
+  .prod-info .nm { font-size: 15px; font-weight: 700; margin: 4px 0 6px; }
+  .prod-info .pr { font-size: 15px; font-weight: 800; color: #16181d; }
+  .prod-info .pr s { color: #9aa0a8; font-weight: 500; font-size: 13px; margin-left: 6px; }
+</style>
+</head>
+<body>
+  <div class="promo">EXPÉDITION OFFERTE DÈS 80 € — <b>SOLDES D'HIVER : JUSQU'À -40 %</b></div>
+
+  <header>
+    <div class="logo">NORDÉ<span>.</span></div>
+    <nav><b>Nouveautés</b><span>Homme</span><span>Femme</span><span>Sac à dos</span><span>Accessoires</span></nav>
+    <div class="actions"><span>Rechercher</span><span>Compte</span><div class="cart">Panier (2)</div></div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-txt">
+      <div class="kicker">COLLECTION HIVER 2026</div>
+      <h1>Conçu pour<br>le grand froid.</h1>
+      <p>Doudounes, hardshells et accessoires techniques testés au-dessus de 4 000 m. Garantie à vie sur toute la gamme.</p>
+      <div class="ctas">
+        <div class="btn-dark">Explorer la collection</div>
+        <div class="btn-line">Guide des tailles</div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="sun"></div>
+      <div class="peak"></div>
+      <div class="peak2"></div>
+      <div class="float-card"><b>374 avis</b>★★★★★ Doudoune Polaris -25°</div>
+    </div>
+  </section>
+
+  <section class="grid-sec">
+    <div class="grid-head">
+      <h2>Best-sellers</h2>
+      <a>Tout voir →</a>
+    </div>
+    <div class="products">
+      <div class="prod">
+        <div class="ph p1"><div class="pill">NOUVEAU</div></div>
+        <div class="prod-info"><div class="cat">DOUDOUNE</div><div class="nm">Polaris -25°</div><div class="pr">249 €</div></div>
+      </div>
+      <div class="prod">
+        <div class="ph p2"><div class="pill orange">-30 %</div></div>
+        <div class="prod-info"><div class="cat">PULL</div><div class="nm">Maille Fjord</div><div class="pr">69 € <s>99 €</s></div></div>
+      </div>
+      <div class="prod">
+        <div class="ph p3"></div>
+        <div class="prod-info"><div class="cat">VESTE</div><div class="nm">Hardshell Borel</div><div class="pr">189 €</div></div>
+      </div>
+      <div class="prod">
+        <div class="ph p4"><div class="pill">LIMITÉ</div></div>
+        <div class="prod-info"><div class="cat">SAC 45 L</div><div class="nm">Trekk Summit</div><div class="pr">159 €</div></div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

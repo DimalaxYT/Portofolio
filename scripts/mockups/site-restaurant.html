@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maison Léon — Restaurant gastronomique</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Carlito', 'Noto Sans', sans-serif; background: #faf7f0; color: #22301f; }
+  .serif { font-family: 'Tinos', Georgia, serif; }
+
+  header { display: flex; justify-content: space-between; align-items: center; padding: 22px 64px; background: #faf7f0; border-bottom: 1px solid #e6ddc9; }
+  .logo { font-family: 'Tinos', Georgia, serif; font-size: 24px; letter-spacing: 2px; }
+  .logo span { color: #b3872e; }
+  nav { display: flex; gap: 36px; font-size: 15px; color: #4a5647; }
+  nav b { color: #22301f; }
+  .book-btn { background: #1f3d2b; color: #faf7f0; padding: 11px 26px; border-radius: 40px; font-size: 14px; }
+
+  .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center; padding: 70px 64px 60px; }
+  .eyebrow { font-size: 12px; letter-spacing: 4px; color: #b3872e; margin-bottom: 18px; }
+  h1 { font-family: 'Tinos', Georgia, serif; font-size: 56px; line-height: 1.08; font-weight: 400; }
+  h1 em { color: #1f3d2b; font-style: italic; }
+  .hero p { margin-top: 22px; font-size: 17px; line-height: 1.6; color: #5b655a; max-width: 440px; }
+  .hero-ctas { margin-top: 34px; display: flex; gap: 14px; align-items: center; }
+  .cta-main { background: #b3872e; color: #fff; padding: 14px 30px; border-radius: 40px; font-size: 15px; }
+  .cta-ghost { color: #22301f; font-size: 15px; text-decoration: underline; text-underline-offset: 4px; }
+
+  .plate-art { position: relative; height: 420px; }
+  .plate { position: absolute; inset: 0; margin: auto; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #ffffff 0%, #f2ecdd 55%, #e4d9c2 100%); box-shadow: 0 30px 60px rgba(31,61,43,.18), inset 0 0 0 12px #fff, inset 0 0 0 14px #d9c9a8; }
+  .food1 { position: absolute; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d98e4a, #a85f28); top: 118px; left: 130px; box-shadow: 0 10px 22px rgba(0,0,0,.2); }
+  .food2 { position: absolute; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #7d9b6a, #4c6b3c); top: 170px; left: 220px; }
+  .food3 { position: absolute; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #e8c56b, #c19a3f); top: 120px; left: 216px; }
+  .dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #b3872e; }
+  .badge { position: absolute; right: 26px; top: 30px; background: #fff; border: 1px solid #e6ddc9; border-radius: 16px; padding: 14px 20px; box-shadow: 0 16px 34px rgba(31,61,43,.12); font-size: 13px; line-height: 1.5; }
+  .badge b { display: block; font-size: 15px; }
+
+  .menus { background: #1f3d2b; color: #f0ead9; padding: 54px 64px 64px; }
+  .menus-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 34px; }
+  .menus-head h2 { font-family: 'Tinos', Georgia, serif; font-size: 34px; font-weight: 400; }
+  .menus-head a { color: #e8c56b; font-size: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .card { background: #274a35; border: 1px solid #3c5c47; border-radius: 14px; padding: 26px; }
+  .card .tag { font-size: 11px; letter-spacing: 2px; color: #e8c56b; }
+  .card h3 { font-family: 'Tinos', Georgia, serif; font-size: 22px; margin: 10px 0 8px; font-weight: 400; }
+  .card p { font-size: 13.5px; line-height: 1.55; color: #c9d2c3; }
+  .price { margin-top: 16px; font-size: 20px; color: #e8c56b; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo">MAISON <span>LÉON</span></div>
+    <nav><b>Accueil</b><span>La carte</span><span>Le chef</span><span>Privatisation</span></nav>
+    <div class="book-btn">Réserver une table</div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow">RESTAURANT · LYON 2E</div>
+      <h1>Cuisine de saison, <em>âme du terroir</em></h1>
+      <p>Une table bistronomique où chaque assiette célèbre les producteurs d'Auvergne. Menu renouvelé chaque semaine par le chef Léon Marchand.</p>
+      <div class="hero-ctas">
+        <div class="cta-main">Réserver une table</div>
+        <div class="cta-ghost">Découvrir la carte</div>
+      </div>
+    </div>
+    <div class="plate-art">
+      <div class="plate"></div>
+      <div class="food1"></div>
+      <div class="food2"></div>
+      <div class="food3"></div>
+      <div class="dot" style="top: 60px; left: 90px;"></div>
+      <div class="dot" style="top: 340px; right: 120px;"></div>
+      <div class="badge"><b>★★★★★ 4,9/5</b>1 240 avis — Guide Michelin 2025</div>
+    </div>
+  </section>
+
+  <section class="menus">
+    <div class="menus-head">
+      <h2>Nos menus du moment</h2>
+      <a>Voir toute la carte →</a>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="tag">DÉJEUNER</div>
+        <h3>Menu du Marché</h3>
+        <p>Entrée, plat, dessert. Produits frais du jour, cuisine de marché généreuse et assaisonnée.</p>
+        <div class="price">32 €</div>
+      </div>
+      <div class="card">
+        <div class="tag">DÎNER</div>
+        <h3>Menu Dégustation</h3>
+        <p>Cinq services en accord mets et vins, sélectionnés par notre sommelière Camille Roux.</p>
+        <div class="price">78 €</div>
+      </div>
+      <div class="card">
+        <div class="tag">WEEK-END</div>
+        <h3>Brunch du Dimanche</h3>
+        <p>Buffet généreux, pâtisseries maison et jus pressés. Service de 10h30 à 14h30.</p>
+        <div class="price">45 €</div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
