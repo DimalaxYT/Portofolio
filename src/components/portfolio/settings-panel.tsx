@@ -20,17 +20,29 @@ import { DEFAULT_SETTINGS, type SiteSettings } from "@/lib/types";
 import { CategoriesPanel } from "./categories-panel";
 import { BotPanel } from "./bot-panel";
 
-async function fetchSettings(): Promise<SiteSettings> {
-  const res = await fetch("/api/settings");
-  if (!res.ok) return DEFAULT_SETTINGS;
-  return res.json();
-}
+import { fetchSettings } from "@/lib/api-client";
 
 export function SettingsPanel() {
-  const { data: settings } = useQuery({
+  const {
+    data: settings,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
   });
+  if (isLoading) return <p role="status">Chargement des paramètres…</p>;
+  if (isError)
+    return (
+      <div role="alert">
+        <p>
+          Impossible de charger les paramètres. Aucun texte par défaut ne sera
+          enregistré.
+        </p>
+        <Button onClick={() => refetch()}>Réessayer</Button>
+      </div>
+    );
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <SiteContentForm settings={settings ?? DEFAULT_SETTINGS} />
@@ -59,7 +71,12 @@ function SiteContentForm({ settings }: { settings: SiteSettings }) {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          siteTitle: form.siteTitle,
+          heroTitle: form.heroTitle,
+          heroSubtitle: form.heroSubtitle,
+          footerText: form.footerText,
+        }),
       });
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ["settings"] });
@@ -89,7 +106,9 @@ function SiteContentForm({ settings }: { settings: SiteSettings }) {
     <form onSubmit={save}>
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-lg">Contenu du site</CardTitle>
+          <CardTitle className="font-display text-lg">
+            Contenu du site
+          </CardTitle>
           <CardDescription>
             Personnalisez les textes affichés sur la page publique.
           </CardDescription>
@@ -161,8 +180,8 @@ function PasswordForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (next.length < 6) {
-      setError("Le nouveau mot de passe doit contenir au moins 6 caractères.");
+    if (next.length < 12) {
+      setError("Le nouveau mot de passe doit contenir au moins 12 caractères.");
       return;
     }
     if (next !== confirm) {
@@ -229,7 +248,9 @@ function PasswordForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="pw-confirm">Confirmer le nouveau mot de passe</Label>
+            <Label htmlFor="pw-confirm">
+              Confirmer le nouveau mot de passe
+            </Label>
             <Input
               id="pw-confirm"
               type="password"

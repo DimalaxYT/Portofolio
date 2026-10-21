@@ -1,28 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { isAuthenticated } from "@/lib/auth";
-
-/** Réordonne les sites : reçoit la liste complète des ids dans l'ordre d'affichage voulu. */
-export async function POST(req: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
+import { reorderArtworks } from "@/lib/repository";
+import { apiError, assertSameOrigin, readJson } from "@/lib/http";
+import { reorderSchema } from "@/lib/validation";
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const ids: unknown = body?.ids;
-    if (!Array.isArray(ids) || ids.some((id) => typeof id !== "string")) {
-      return NextResponse.json({ error: "Liste invalide" }, { status: 400 });
-    }
-    await db.$transaction(
-      (ids as string[]).map((id, index) =>
-        db.artwork.update({ where: { id }, data: { order: index } })
-      )
-    );
+    assertSameOrigin(req);
+    await requireAdmin();
+    await reorderArtworks((await readJson(req, reorderSchema)).ids);
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { error: "Réordonnancement impossible" },
-      { status: 400 }
-    );
+  } catch (e) {
+    return apiError(e);
   }
 }

@@ -1,4 +1,6 @@
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
+import { countArtworks as countStoredArtworks } from "@/lib/repository";
+import { AppError } from "@/lib/errors";
 
 /**
  * Bot de ping automatique.
@@ -10,7 +12,8 @@ import { db } from "@/lib/db";
  *                           acceptant un POST JSON). Vide = bot désactivé.
  *   PING_INTERVAL_MINUTES — intervalle entre deux pings en minutes (défaut : 5).
  *   PING_MESSAGE          — message personnalisé (optionnel).
- *   PING_BOT_SECRET       — protège /api/bot/ping pour les crons externes (optionnel).
+ *   PING_BOT_SECRET       — requis pour les crons externes.
+ *   PING_INTERNAL_SCHEDULER — true active le planificateur interne (désactivé par défaut).
  *
  * Détection automatique des webhooks Discord : le payload est alors adapté
  * au format attendu { username, content }.
@@ -89,7 +92,17 @@ function state(): BotState {
 }
 
 /** Webhooks Discord reconnus pour adapter le format du message. */
-const DISCORD_PATTERN = /(?:discord\.com|discordapp\.com)\/api\/webhooks/;
+function isDiscordWebhook(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      ["discord.com", "discordapp.com"].includes(url.hostname) &&
+      url.pathname.startsWith("/api/webhooks/")
+    );
+  } catch {
+    return false;
+  }
+}
 
 export const DEFAULT_PING_MESSAGE =
   "Ping automatique — le portfolio est en ligne.";
@@ -98,7 +111,7 @@ export function readConfig(): BotConfig {
   const webhookUrl = process.env.PING_WEBHOOK_URL?.trim() || null;
   const rawInterval = Number.parseInt(
     process.env.PING_INTERVAL_MINUTES ?? "",
-    10
+    10,
   );
   const intervalMinutes =
     Number.isFinite(rawInterval) && rawInterval >= 1
@@ -109,7 +122,7 @@ export function readConfig(): BotConfig {
     webhookUrl,
     intervalMinutes,
     customMessage,
-    discordMode: webhookUrl ? DISCORD_PATTERN.test(webhookUrl) : false,
+    discordMode: webhookUrl ? isDiscordWebhook(webhookUrl) : false,
     secret: process.env.PING_BOT_SECRET?.trim() || null,
   };
 }
@@ -124,13 +137,18 @@ function formatParis(date: Date): string {
 
 /** Nombre de réalisations en ligne (info bonus du message, jamais bloquant). */
 async function countArtworks(): Promise<number | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeout = new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), 3000)
-    );
-    return await Promise.race([db.artwork.count(), timeout]);
+    return await Promise.race([
+      countStoredArtworks(),
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), 3000);
+      }),
+    ]);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -140,7 +158,9 @@ export async function buildPingMessage(config: BotConfig): Promise<string> {
   const count = await countArtworks();
   if (count !== null) {
     lines.push(
-      count > 1 ? `${count} réalisations en ligne` : `${count} réalisation en ligne`
+      count > 1
+        ? `${count} réalisations en ligne`
+        : `${count} réalisation en ligne`,
     );
   }
   lines.push(formatParis(new Date()));
@@ -149,7 +169,7 @@ export async function buildPingMessage(config: BotConfig): Promise<string> {
 
 export function buildPingPayload(
   config: BotConfig,
-  message: string
+  message: string,
 ): Record<string, unknown> {
   if (config.discordMode) {
     return { username: "Portfolio Bot", content: message };
@@ -166,11 +186,29 @@ export function buildPingPayload(
 
 /** Exécute un ping vers le webhook et met à jour l'état interne du bot. */
 export async function runPing(
-  reason: "boot" | "schedule" | "manual"
+  reason: "boot" | "schedule" | "manual",
 ): Promise<PingResult> {
   const s = state();
   const config = readConfig();
   const startedAt = Date.now();
+  if (config.webhookUrl) {
+    // Reserve before sending: prevents concurrent cron calls and webhook spam.
+    const lease = await getDb().execute({
+      sql: `INSERT INTO bot_locks(key,expires_at) VALUES ('ping',?)
+        ON CONFLICT(key) DO UPDATE SET expires_at=excluded.expires_at
+        WHERE bot_locks.expires_at<=? RETURNING key`,
+      args: [
+        startedAt +
+          (reason === "manual" ? 30_000 : config.intervalMinutes * 60_000),
+        startedAt,
+      ],
+    });
+    if (!lease.rows.length)
+      throw new AppError(
+        429,
+        "Un ping est déjà planifié ou vient de partir. Réessayez plus tard.",
+      );
+  }
 
   s.lastRunAt = new Date();
   s.totalPings += 1;
@@ -190,12 +228,21 @@ export async function runPing(
     const timeout = setTimeout(() => controller.abort(), 10_000);
     let res: Response;
     try {
-      res = await fetch(config.webhookUrl, {
+      const target = new URL(config.webhookUrl);
+      if (
+        target.protocol !== "https:" &&
+        !(process.env.NODE_ENV !== "production" && target.protocol === "http:")
+      ) {
+        throw new Error("Invalid webhook protocol");
+      }
+      res = await fetch(target, {
         method: "POST",
+        redirect: "error",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+      await res.body?.cancel();
     } finally {
       clearTimeout(timeout);
     }
@@ -207,7 +254,7 @@ export async function runPing(
     s.lastError = ok ? null : `HTTP ${res.status}`;
     if (!ok) s.totalErrors += 1;
     console.log(
-      `[ping-bot] ping ${reason} → ${ok ? "OK" : "ÉCHEC"} (HTTP ${res.status}) en ${durationMs} ms`
+      `[ping-bot] ping ${reason} → ${ok ? "OK" : "ÉCHEC"} (HTTP ${res.status}) en ${durationMs} ms`,
     );
     return { ok, httpStatus: res.status, durationMs, error: s.lastError };
   } catch (err) {
@@ -216,7 +263,7 @@ export async function runPing(
       err instanceof Error
         ? err.name === "AbortError"
           ? "Délai dépassé (10 s)"
-          : err.message
+          : "Impossible de joindre le webhook"
         : "Erreur inconnue";
     s.lastStatus = "error";
     s.lastHttpStatus = null;
@@ -232,33 +279,32 @@ export async function runPing(
  * via instrumentation.ts). Sans PING_WEBHOOK_URL, le bot reste inactif.
  */
 export function startPingBot(): void {
+  // External cron is the default: timers cannot wake a sleeping Render service.
+  if (process.env.PING_INTERNAL_SCHEDULER !== "true") return;
   const s = state();
-  if (s.startedAt) return; // déjà démarré (protège du hot-reload dev)
-
   const config = readConfig();
-  if (!config.webhookUrl) {
-    console.log(
-      "[ping-bot] désactivé — définissez PING_WEBHOOK_URL dans .env pour activer le ping automatique"
-    );
-    return;
-  }
-
-  const intervalMs = config.intervalMinutes * 60_000;
+  if (s.startedAt || !config.webhookUrl) return;
   s.startedAt = new Date();
-  console.log(
-    `[ping-bot] actif — ping ${config.discordMode ? "Discord" : "webhook"} toutes les ${config.intervalMinutes} minute(s)`
-  );
-
-  // Premier ping peu après le démarrage pour confirmer la configuration.
+  const tick = async () => {
+    try {
+      await runPing("schedule");
+    } catch (e) {
+      if (!(e instanceof AppError && e.status === 429))
+        console.error("[ping-bot] Échec de planification");
+    } finally {
+      const delay = readConfig().intervalMinutes * 60_000;
+      s.nextRunAt = new Date(Date.now() + delay);
+      s.timer = setTimeout(() => {
+        void tick();
+      }, delay);
+      s.timer.unref?.();
+    }
+  };
   s.nextRunAt = new Date(Date.now() + 10_000);
   s.bootTimer = setTimeout(() => {
-    void runPing("boot");
+    void tick();
   }, 10_000);
-
-  s.timer = setInterval(() => {
-    s.nextRunAt = new Date(Date.now() + intervalMs);
-    void runPing("schedule");
-  }, intervalMs);
+  s.bootTimer.unref?.();
 }
 
 /** Statut sûr à exposer (jamais l'URL complète du webhook ni son token). */

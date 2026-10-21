@@ -1,41 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   SESSION_COOKIE,
   changePassword,
   createSessionToken,
-  isAuthenticated,
+  requireAdmin,
   sessionCookieOptions,
   verifyPassword,
 } from "@/lib/auth";
+import { apiError, assertSameOrigin, readJson } from "@/lib/http";
+import { passwordSchema } from "@/lib/validation";
+import { consumeLimit } from "@/lib/rate-limit";
+import { AppError } from "@/lib/errors";
 
-export async function POST(req: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const current =
-      typeof body?.currentPassword === "string" ? body.currentPassword : "";
-    const next = typeof body?.newPassword === "string" ? body.newPassword : "";
-    if (!(await verifyPassword(current))) {
-      return NextResponse.json(
-        { error: "Le mot de passe actuel est incorrect" },
-        { status: 400 }
-      );
-    }
-    if (next.length < 6) {
-      return NextResponse.json(
-        { error: "Le nouveau mot de passe doit contenir au moins 6 caractères" },
-        { status: 400 }
-      );
-    }
-    await changePassword(next);
-    // Re-émet une session fraîche (les anciens tokens sont invalidés par la rotation du secret)
-    const token = await createSessionToken();
+    assertSameOrigin(req);
+    await requireAdmin();
+    await consumeLimit("password", 10, 15 * 60_000);
+    const body = await readJson(req, passwordSchema);
+    if (!(await verifyPassword(body.currentPassword)))
+      throw new AppError(400, "Mot de passe actuel incorrect");
+    await changePassword(body.newPassword);
     const res = NextResponse.json({ ok: true });
-    res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+    res.cookies.set(
+      SESSION_COOKIE,
+      await createSessionToken(),
+      sessionCookieOptions,
+    );
     return res;
-  } catch {
-    return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
+  } catch (e) {
+    return apiError(e);
   }
 }

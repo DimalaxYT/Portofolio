@@ -1,37 +1,32 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-
-const CONTENT_TYPES: Record<string, string> = {
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  webp: "image/webp",
-  avif: "image/avif",
-  svg: "image/svg+xml",
-  bmp: "image/bmp",
-};
-
+import { getDb } from "@/lib/db";
+import { apiError } from "@/lib/http";
+export const runtime = "nodejs";
 export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ name: string }> }
+  req: Request,
+  { params }: { params: Promise<{ name: string }> },
 ) {
   const { name } = await params;
-  // Sécurité : nom de fichier strictement alphanumérique, pas de traversal de chemin
-  if (!/^[a-zA-Z0-9-]+\.[a-z0-9]{1,5}$/.test(name)) {
+  if (!/^[a-f0-9]{64}\.webp$/.test(name))
     return NextResponse.json({ error: "Nom invalide" }, { status: 400 });
-  }
-  const ext = (name.split(".").pop() ?? "").toLowerCase();
+  const headers = {
+    "Content-Type": "image/webp",
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+    ETag: `"${name}"`,
+  };
   try {
-    const data = await fs.readFile(path.join(process.cwd(), "uploads", name));
-    return new NextResponse(new Uint8Array(data), {
-      headers: {
-        "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
+    const result = await getDb().execute({
+      sql: "SELECT data FROM media WHERE name=?",
+      args: [name],
     });
-  } catch {
-    return NextResponse.json({ error: "Image introuvable" }, { status: 404 });
+    if (!result.rows.length)
+      return NextResponse.json({ error: "Image introuvable" }, { status: 404 });
+    if (req.headers.get("if-none-match") === headers.ETag)
+      return new Response(null, { status: 304, headers });
+    const data = result.rows[0].data as ArrayBuffer;
+    return new Response(new Uint8Array(data), { headers });
+  } catch (e) {
+    return apiError(e);
   }
 }

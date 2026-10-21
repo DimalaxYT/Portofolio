@@ -1,5 +1,9 @@
 """Génère des images de démonstration élégantes pour tester le portfolio."""
+from pathlib import Path
 from PIL import Image, ImageDraw
+
+OUTPUT = Path(__file__).resolve().parent.parent / "public" / "demo"
+OUTPUT.mkdir(parents=True, exist_ok=True)
 
 W, H = 800, 600
 
@@ -24,7 +28,7 @@ def gradient(name, c1, c2, c3):
         od.ellipse([cx - r, cy - int(r * 0.75), cx + r, cy + int(r * 0.75)],
                    fill=c3 + (alpha,))
         img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-    img.save(f"/home/z/my-project/.zscripts/{name}.png", quality=90)
+    img.save(OUTPUT / f"{name}.png", quality=90)
     print(f"OK {name}.png")
 
 

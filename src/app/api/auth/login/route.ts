@@ -1,26 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   SESSION_COOKIE,
   createSessionToken,
   sessionCookieOptions,
   verifyPassword,
 } from "@/lib/auth";
+import { apiError, assertSameOrigin, readJson } from "@/lib/http";
+import { loginSchema } from "@/lib/validation";
+import { limitLogin } from "@/lib/rate-limit";
+import { AppError } from "@/lib/errors";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const password = typeof body?.password === "string" ? body.password : "";
-    if (!password || !(await verifyPassword(password))) {
-      return NextResponse.json(
-        { error: "Mot de passe incorrect" },
-        { status: 401 }
-      );
-    }
-    const token = await createSessionToken();
+    assertSameOrigin(req);
+    await limitLogin(req);
+    const { password } = await readJson(req, loginSchema);
+    if (!(await verifyPassword(password)))
+      throw new AppError(401, "Mot de passe incorrect");
     const res = NextResponse.json({ ok: true });
-    res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+    res.cookies.set(
+      SESSION_COOKIE,
+      await createSessionToken(),
+      sessionCookieOptions,
+    );
     return res;
-  } catch {
-    return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
+  } catch (e) {
+    return apiError(e);
   }
 }

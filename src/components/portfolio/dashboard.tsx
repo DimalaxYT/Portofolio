@@ -31,13 +31,10 @@ import { LogoMark } from "./logo-mark";
 import { ThemeToggle } from "./theme-toggle";
 import { ArtworkDialog } from "./artwork-dialog";
 import { SettingsPanel } from "./settings-panel";
+import { applyArtworkOrder } from "@/lib/artwork-order";
 import type { Artwork } from "@/lib/types";
 
-async function fetchArtworks(): Promise<Artwork[]> {
-  const res = await fetch("/api/artworks");
-  if (!res.ok) throw new Error("Erreur de chargement");
-  return res.json();
-}
+import { fetchArtworks } from "@/lib/api-client";
 
 export function Dashboard({ onExit }: { onExit: () => void }) {
   const queryClient = useQueryClient();
@@ -46,7 +43,11 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
   const [editing, setEditing] = useState<Artwork | null>(null);
   const [toDelete, setToDelete] = useState<Artwork | null>(null);
 
-  const { data: artworks, isLoading } = useQuery({
+  const {
+    data: artworks,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["artworks"],
     queryFn: fetchArtworks,
   });
@@ -58,7 +59,10 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["artworks"] });
-      toast({ title: "Réalisation supprimée", description: "Elle n'apparaît plus sur le site public." });
+      toast({
+        title: "Réalisation supprimée",
+        description: "Elle n'apparaît plus sur le site public.",
+      });
       setToDelete(null);
     },
     onError: () => {
@@ -71,28 +75,60 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
   });
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    queryClient.invalidateQueries({ queryKey: ["session"] });
-    toast({ title: "Déconnecté", description: "À bientôt !" });
-    onExit();
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Déconnexion impossible");
+      queryClient.setQueryData(["session"], false);
+      toast({ title: "Déconnecté", description: "À bientôt !" });
+      onExit();
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Déconnexion impossible. Réessayez.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const move = async (index: number, dir: -1 | 1) => {
-    if (!artworks) return;
+  const reorderMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch("/api/artworks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error("Réordonnancement impossible");
+    },
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ["artworks"] });
+      const previous = queryClient.getQueryData<Artwork[]>(["artworks"]);
+      if (previous)
+        queryClient.setQueryData(
+          ["artworks"],
+          applyArtworkOrder(previous, ids),
+        );
+      return { previous };
+    },
+    onError: (_error, _ids, context) => {
+      if (context?.previous)
+        queryClient.setQueryData(["artworks"], context.previous);
+      toast({
+        title: "Erreur",
+        description: "Ordre non enregistré. L’ancien ordre a été restauré.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["artworks"] });
+    },
+  });
+  const move = (index: number, dir: -1 | 1) => {
+    if (!artworks || reorderMutation.isPending) return;
     const j = index + dir;
     if (j < 0 || j >= artworks.length) return;
     const ids = artworks.map((a) => a.id);
     [ids[index], ids[j]] = [ids[j], ids[index]];
-    // Mise à jour optimiste pour un retour immédiat
-    queryClient.setQueryData<Artwork[]>(["artworks"], [
-      ...artworks.map((a, k) => ({ ...a, order: k })),
-    ]);
-    await fetch("/api/artworks/reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids }),
-    }).catch(() => null);
-    queryClient.invalidateQueries({ queryKey: ["artworks"] });
+    reorderMutation.mutate(ids);
   };
 
   const openCreate = () => {
@@ -113,16 +149,28 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-4 sm:h-16 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <LogoMark className="h-5 w-5 shrink-0 text-primary" />
-            <span className="truncate font-display text-lg">Administration</span>
+            <span className="truncate font-display text-lg">
+              Administration
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" className="px-2 sm:px-3 max-sm:h-9" onClick={onExit}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="px-2 sm:px-3 max-sm:h-9"
+              onClick={onExit}
+            >
               <Eye className="mr-1 h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">Voir le site</span>
               <span className="sm:hidden">Site</span>
             </Button>
-            <Button variant="outline" size="sm" className="px-2 sm:px-3 max-sm:h-9" onClick={logout}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-2 sm:px-3 max-sm:h-9"
+              onClick={logout}
+            >
               <LogOut className="mr-1 h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">Déconnexion</span>
               <span className="sm:hidden">Sortir</span>
@@ -154,13 +202,20 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
                     : `${list.length} réalisation${list.length > 1 ? "s" : ""}`}
                 </p>
               </div>
-              <Button onClick={openCreate} className="w-full touch-manipulation sm:w-auto">
+              <Button
+                onClick={openCreate}
+                className="w-full touch-manipulation sm:w-auto"
+              >
                 <Plus className="mr-1.5 h-4 w-4" />
                 Ajouter une réalisation
               </Button>
             </div>
 
-            {isLoading ? (
+            {isError ? (
+              <p role="alert" className="py-8 text-destructive">
+                Impossible de charger les projets. Réessayez plus tard.
+              </p>
+            ) : isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton key={i} className="h-24 w-full rounded-lg" />
@@ -227,7 +282,7 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
                           size="icon"
                           aria-label="Monter"
                           className="max-sm:h-10 max-sm:w-10"
-                          disabled={i === 0}
+                          disabled={i === 0 || reorderMutation.isPending}
                           onClick={() => move(i, -1)}
                         >
                           <ChevronUp className="h-4 w-4" />
@@ -237,7 +292,9 @@ export function Dashboard({ onExit }: { onExit: () => void }) {
                           size="icon"
                           aria-label="Descendre"
                           className="max-sm:h-10 max-sm:w-10"
-                          disabled={i === list.length - 1}
+                          disabled={
+                            i === list.length - 1 || reorderMutation.isPending
+                          }
                           onClick={() => move(i, 1)}
                         >
                           <ChevronDown className="h-4 w-4" />

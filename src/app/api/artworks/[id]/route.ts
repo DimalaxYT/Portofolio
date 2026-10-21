@@ -1,62 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { isAuthenticated } from "@/lib/auth";
-
-function strOrNull(v: unknown): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s === "" ? null : s;
-}
-
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
-  const { id } = await params;
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
+import { deleteArtwork, saveArtwork } from "@/lib/repository";
+import { apiError, assertSameOrigin, readJson } from "@/lib/http";
+import { artworkSchema } from "@/lib/validation";
+type Context = { params: Promise<{ id: string }> };
+export async function PUT(req: Request, { params }: Context) {
   try {
-    const body = await req.json();
-    const title = strOrNull(body?.title);
-    if (!title) {
-      return NextResponse.json(
-        { error: "Le titre est obligatoire" },
-        { status: 400 }
-      );
-    }
-    const artwork = await db.artwork.update({
-      where: { id },
-      data: {
-        title,
-        url: strOrNull(body?.url),
-        photo: strOrNull(body?.photo),
-        description: strOrNull(body?.description),
-        link: strOrNull(body?.link),
-        category: strOrNull(body?.category),
-      },
-    });
-    return NextResponse.json(artwork);
-  } catch {
+    assertSameOrigin(req);
+    await requireAdmin();
     return NextResponse.json(
-      { error: "Site introuvable ou requête invalide" },
-      { status: 404 }
+      await saveArtwork(await readJson(req, artworkSchema), (await params).id),
     );
+  } catch (e) {
+    return apiError(e);
   }
 }
-
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
-  const { id } = await params;
+export async function DELETE(req: Request, { params }: Context) {
   try {
-    await db.artwork.delete({ where: { id } });
+    assertSameOrigin(req);
+    await requireAdmin();
+    await deleteArtwork((await params).id);
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Site introuvable" }, { status: 404 });
+  } catch (e) {
+    return apiError(e);
   }
 }

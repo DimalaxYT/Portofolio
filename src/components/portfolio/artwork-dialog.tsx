@@ -23,11 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DEFAULT_CATEGORIES,
-  parseCategories,
-  type Artwork,
-} from "@/lib/types";
+import type { Artwork } from "@/lib/types";
+import { fetchCategories } from "@/lib/api-client";
 
 interface FormState {
   title: string;
@@ -66,14 +63,9 @@ export function ArtworkDialog({
   const { toast } = useToast();
 
   // Liste des catégories disponibles (Paramètres → Catégories)
-  const { data: categories = DEFAULT_CATEGORIES } = useQuery({
+  const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
-    queryFn: async (): Promise<string[]> => {
-      const res = await fetch("/api/settings");
-      if (!res.ok) return DEFAULT_CATEGORIES;
-      const data = await res.json();
-      return parseCategories(data?.categories);
-    },
+    queryFn: fetchCategories,
     staleTime: 30_000,
   });
 
@@ -91,7 +83,7 @@ export function ArtworkDialog({
               photo: artwork.photo ?? "",
               category: artwork.category ?? "",
             }
-          : EMPTY
+          : EMPTY,
       );
     }
   }, [open, artwork]);
@@ -100,6 +92,10 @@ export function ArtworkDialog({
     setForm((f) => ({ ...f, [key]: value }));
 
   const uploadFile = async (file: File) => {
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Image supérieure à 8 Mo");
+      return;
+    }
     setUploading(true);
     setError(null);
     try {
@@ -136,7 +132,7 @@ export function ArtworkDialog({
           method: isEdit ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
-        }
+        },
       );
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ["artworks"] });
@@ -214,7 +210,7 @@ export function ArtworkDialog({
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/avif"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

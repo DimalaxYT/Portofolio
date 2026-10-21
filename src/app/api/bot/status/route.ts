@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getBotStatus } from "@/lib/ping-bot";
-
+import { requireAdmin } from "@/lib/auth";
+import { apiError } from "@/lib/http";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-/** Statut du bot de ping (jamais l'URL complète du webhook). */
 export async function GET() {
-  return NextResponse.json(getBotStatus());
+  try {
+    await requireAdmin();
+    return NextResponse.json(getBotStatus());
+  } catch (e) {
+    return apiError(e);
+  }
 }
