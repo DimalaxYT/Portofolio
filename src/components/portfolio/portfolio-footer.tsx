@@ -48,6 +48,12 @@ export function PortfolioFooter({
               Projets
             </a>
             <a
+              href="/universe"
+              className="py-1 transition-colors hover:text-primary sm:py-0"
+            >
+              Univers 3D
+            </a>
+            <a
               href="#expertises"
               className="py-1 transition-colors hover:text-primary sm:py-0"
             >

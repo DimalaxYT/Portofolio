@@ -222,6 +222,72 @@ il ne fonctionne pas pendant la veille Render. Évite de combiner ce mode avec u
 cron externe. Les statistiques du panneau bot sont celles du processus courant ;
 seuls le verrou et les données du portfolio sont persistants.
 
+## Expérience 3D « Universe » (/universe)
+
+Seconde lecture du portfolio : un parcours vertical plein écran — un écran, une
+scène — piloté par le défilement natif, avec un décor 3D temps réel
+(Three.js / React Three Fiber). L'accueil classique est inchangé ; les deux vues
+partagent les mêmes données (projets et réglages du CMS). Un lien « Univers 3D »
+dans l'en-tête et le pied de page y mène.
+
+### Comportement
+
+- Huit scènes : héros, à propos, quatre scènes-projets, compétences, contact.
+- Défilement **natif** + `scroll-snap-type: y proximity` : molette, tactile,
+  inertie iOS, clavier (↑ ↓, PageUp/PageDown, Home/End) et rail de navigation
+  cliquable. Aucune bibliothèque ne capture le scroll, aucun piège.
+- **Un seul contexte WebGL** pour tout le parcours : les mondes sont placés le
+  long de l'axe Z et la caméra les traverse. Les scènes hors du voisinage
+  immédiat ne sont pas montées.
+- Tout le texte reste dans le DOM : rendu serveur, sélectionnable, indexable,
+  lisible par les lecteurs d'écran. La 3D ne porte aucun texte.
+
+### Modifier le contenu
+
+Un seul fichier de texte : `src/lib/universe/content.ts` (nom, accroche FR/EN,
+à-propos, compétences, contacts, libellés d'interface, palette).
+
+Les projets vivent dans `src/lib/universe/projects.ts`. Les réalisations créées
+dans l'administration remontent automatiquement et passent devant les
+démonstrations ; au-delà de `MAX_PROJECT_SCENES`, un lien renvoie vers la galerie
+classique. Chaque projet choisit sa mise en scène (`interface`, `world`,
+`device`, `architecture`) ; un projet du CMS la déduit de sa catégorie.
+
+**Aucun lien fictif.** Un projet sans URL n'affiche pas de bouton « ouvrir » mais
+la mention « Lien non configuré ». `CONTACTS` est vide par défaut : la scène
+contact affiche alors un état explicite expliquant où le configurer, jamais des
+coordonnées inventées. Les quatre projets fournis sont `placeholder: true` et
+signalés « Contenu de démonstration » à l'écran.
+
+### Performance et accessibilité
+
+- Palier de qualité estimé (cœurs, mémoire, type de pointeur, largeur) puis
+  abaissable en cours de route : DPR plafonné, particules réduites, bloom réservé
+  au palier haut, anticrénelage coupé au palier bas.
+- Reflets issus d'une carte d'environnement **générée localement** (PMREM) :
+  aucun fichier HDR ni police 3D téléchargés, rien ne dépend d'un CDN.
+- Rendu mis en pause quand l'onglet est masqué ; géométries, matériaux et
+  textures libérés au démontage.
+- `prefers-reduced-motion` : animations continues coupées, parallaxe désactivée,
+  voile de chargement immédiat.
+- Sans WebGL : repli en CSS pur, l'expérience reste entièrement navigable et
+  lisible.
+- Le code Three.js (~1 Mo non compressé) est chargé **uniquement** sur
+  `/universe`, à la demande : l'accueil classique ne le télécharge jamais.
+- Voile de chargement court, skippable, et borné par un filet de sécurité :
+  il ne peut pas rester bloqué.
+
+### Lint et couche WebGL
+
+`react-hooks/purity` et `react-hooks/immutability` (React Compiler) sont
+désactivées **uniquement** pour la couche WebGL
+(`src/components/universe/three/`, `src/components/universe/scenes/`,
+`universe-canvas.tsx`) : les géométries, matériaux et textures Three.js sont des
+ressources GPU mutables construites une fois dans `useMemo` puis libérées
+explicitement, et R3F transmet la scène et la caméra précisément pour être
+modifiées dans `useFrame` sans re-render. Tous les composants DOM de
+l'expérience restent soumis à l'ensemble des règles.
+
 ## Vérifications
 
 ```sh
@@ -242,7 +308,11 @@ Les tests couvrent migrations idempotentes, CRUD, relations de catégories et ca
 Unicode, transactions, réordonnancement complet, validation, sessions et rotation,
 limitation des tentatives, CSRF, images, cache et permissions du bot. Le parcours
 HTTP vérifie aussi l'import multipart et la présence des projets dans le HTML
-initial. Ce ne sont pas des tests visuels ou un audit de sécurité exhaustif.
+initial. Les tests `universe` couvrent la sélection des scènes-projets (contenu
+réel prioritaire, débordement annoncé), l'absence de bouton « ouvrir » sans URL
+valide, le choix de la mise en scène par catégorie, l'absence de contact inventé
+et l'intégrité des compétences liées. Ce ne sont pas des tests visuels ni un
+audit de sécurité exhaustif.
 
 La CI GitHub exécute typage, lint sans avertissement, tests locaux/HTTP et build.
 Les dépendances sont verrouillées avec npm ; les polices sont auto-hébergées via

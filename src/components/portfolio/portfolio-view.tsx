@@ -164,6 +164,17 @@ export function PortfolioView({
               active={activeSection === "contact"}
               className="max-sm:hidden"
             />
+            {/* Accès à l'expérience 3D plein écran (route distincte). */}
+            <a
+              href="/universe"
+              className="relative inline-flex min-h-11 items-center gap-2 px-2 text-primary transition-colors hover:text-foreground max-sm:hidden"
+            >
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 rotate-45 bg-primary shadow-[0_0_10px_var(--color-primary)]"
+              />
+              Univers 3D
+            </a>
             <ThemeToggle />
           </nav>
         </div>
