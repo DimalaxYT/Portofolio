@@ -73,10 +73,10 @@ function InterfaceStage({
       <mesh>
         <boxGeometry args={[6.6, 4.25, 0.16]} />
         <meshStandardMaterial
-          color="#1c1f25"
+          color="#1b1f27"
           metalness={1}
-          roughness={0.28}
-          envMapIntensity={1.4}
+          roughness={0.14}
+          envMapIntensity={2.8}
         />
       </mesh>
       {/* Dalle affichée */}
@@ -87,7 +87,7 @@ function InterfaceStage({
             map={texture}
             emissive="#ffffff"
             emissiveMap={texture}
-            emissiveIntensity={0.55}
+            emissiveIntensity={0.85}
             roughness={0.42}
             metalness={0}
           />
@@ -103,7 +103,12 @@ function InterfaceStage({
       {/* Pied */}
       <mesh position={[0, -2.7, -0.2]}>
         <cylinderGeometry args={[0.09, 0.16, 1, 12]} />
-        <meshStandardMaterial color="#2a2e35" metalness={1} roughness={0.3} />
+        <meshStandardMaterial
+          color="#2a2e35"
+          metalness={1}
+          roughness={0.16}
+          envMapIntensity={2.6}
+        />
       </mesh>
 
       {/* Éclats d'interface flottants */}
@@ -126,7 +131,7 @@ function InterfaceStage({
                 metalness={0.6}
                 roughness={0.4}
                 emissive={accent}
-                emissiveIntensity={0.08}
+                emissiveIntensity={0.45}
               />
             </mesh>
           </group>
@@ -156,10 +161,10 @@ function DeviceStage({
       <mesh>
         <boxGeometry args={[3.5, 6.9, 0.34]} />
         <meshStandardMaterial
-          color="#23262d"
+          color="#22262f"
           metalness={1}
-          roughness={0.22}
-          envMapIntensity={1.6}
+          roughness={0.11}
+          envMapIntensity={3}
         />
       </mesh>
       <mesh position={[0, 0, 0.18]}>
@@ -169,7 +174,7 @@ function DeviceStage({
             map={texture}
             emissive="#ffffff"
             emissiveMap={texture}
-            emissiveIntensity={0.6}
+            emissiveIntensity={0.9}
             roughness={0.4}
             metalness={0}
           />
@@ -188,9 +193,10 @@ function DeviceStage({
         <meshStandardMaterial
           color={accent}
           emissive={accent}
-          emissiveIntensity={0.6}
-          metalness={0.9}
-          roughness={0.25}
+          emissiveIntensity={2.6}
+          toneMapped={false}
+          metalness={0.95}
+          roughness={0.18}
         />
       </mesh>
       <mesh position={[0, -4.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
@@ -279,11 +285,11 @@ function WorldStage({ accent, segments }: { accent: string; segments: number }) 
     <group position={[0, -1.1, 0]}>
       <mesh geometry={solid}>
         <meshStandardMaterial
-          color="#191d24"
-          metalness={0.35}
-          roughness={0.72}
+          color="#20252e"
+          metalness={0.72}
+          roughness={0.44}
           flatShading
-          envMapIntensity={0.9}
+          envMapIntensity={1.8}
         />
       </mesh>
       <lineSegments geometry={new THREE.WireframeGeometry(wire)}>
@@ -302,11 +308,13 @@ function WorldStage({ accent, segments }: { accent: string; segments: number }) 
         >
           <boxGeometry args={[item.w, item.h, item.w]} />
           <meshStandardMaterial
-            color="#31363f"
-            metalness={0.9}
-            roughness={0.32}
+            color="#454b58"
+            metalness={1}
+            roughness={0.18}
+            envMapIntensity={2.6}
             emissive={accent}
-            emissiveIntensity={i % 4 === 0 ? 0.5 : 0.05}
+            emissiveIntensity={i % 4 === 0 ? 2.4 : 0.12}
+            toneMapped={i % 4 !== 0}
           />
         </mesh>
       ))}
@@ -316,9 +324,10 @@ function WorldStage({ accent, segments }: { accent: string; segments: number }) 
         <meshStandardMaterial
           color={accent}
           emissive={accent}
-          emissiveIntensity={0.7}
-          metalness={0.9}
-          roughness={0.3}
+          emissiveIntensity={2.8}
+          toneMapped={false}
+          metalness={0.95}
+          roughness={0.2}
         />
       </mesh>
     </group>
@@ -354,10 +363,10 @@ function ArchitectureStage({ accent }: { accent: string }) {
           <mesh>
             <boxGeometry args={[slab.w, 0.16, slab.d]} />
             <meshStandardMaterial
-              color="#252932"
+              color="#22262f"
               metalness={1}
-              roughness={0.26}
-              envMapIntensity={1.5}
+              roughness={0.13}
+              envMapIntensity={2.9}
             />
           </mesh>
           {slab.lit && (
@@ -372,10 +381,10 @@ function ArchitectureStage({ accent }: { accent: string }) {
       <mesh position={[0, 0.4, 0]}>
         <boxGeometry args={[0.5, 6.4, 0.5]} />
         <meshStandardMaterial
-          color="#1a1d23"
+          color="#1a1e26"
           metalness={1}
-          roughness={0.18}
-          envMapIntensity={1.8}
+          roughness={0.09}
+          envMapIntensity={3.2}
         />
       </mesh>
       <mesh position={[0, 0.4, 0.26]}>
@@ -387,9 +396,10 @@ function ArchitectureStage({ accent }: { accent: string }) {
         <meshStandardMaterial
           color={accent}
           emissive={accent}
-          emissiveIntensity={0.5}
-          metalness={0.9}
-          roughness={0.3}
+          emissiveIntensity={2.4}
+          toneMapped={false}
+          metalness={0.95}
+          roughness={0.2}
         />
       </mesh>
     </group>
@@ -502,8 +512,8 @@ export function ProjectWorld({
       <pointLight
         position={[3, 3, 5]}
         color={accent}
-        intensity={engaged ? 16 : 9}
-        distance={24}
+        intensity={engaged ? 240 : 150}
+        distance={30}
         decay={2}
       />
 
@@ -522,13 +532,16 @@ export function ProjectWorld({
         )}
       </group>
 
-      {/* Volume d'interaction (invisible mais raycastable). */}
-      <mesh onPointerOver={enter} onPointerOut={leave}>
+      {/* Volume d'interaction : invisible mais raycastable. `depthWrite` et
+          `depthTest` coupés — sinon cette boîte écrirait dans le Z-buffer et
+          masquerait les objets transparents dessinés après elle. */}
+      <mesh onPointerOver={enter} onPointerOut={leave} renderOrder={999}>
         <boxGeometry args={[8, 7.4, 4]} />
         <meshBasicMaterial
           transparent
           opacity={0}
           depthWrite={false}
+          depthTest={false}
           colorWrite={false}
         />
       </mesh>

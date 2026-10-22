@@ -43,6 +43,52 @@ const GRID_FRAGMENT = /* glsl */ `
 `;
 
 /**
+ * SOL POLI
+ * Un plan métallique sombre sous la grille : il reflète le studio HDR et pose
+ * immédiatement les objets dans un espace crédible (effet « photo produit »).
+ * Coût : un draw call.
+ */
+export function StageFloor({
+  length,
+  y = -3.62,
+  color = "#05070b",
+}: {
+  length: number;
+  y?: number;
+  color?: string;
+}) {
+  const { geometry, material } = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(160, length + 140, 1, 1);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      metalness: 1,
+      roughness: 0.34,
+      envMapIntensity: 0.85,
+    });
+    return { geometry: geo, material: mat };
+  }, [length, color]);
+
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material.dispose();
+    },
+    [geometry, material],
+  );
+
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      position={[0, y, -length / 2]}
+      frustumCulled={false}
+      renderOrder={-3}
+    />
+  );
+}
+
+/**
  * Sol grillagé infini : un seul plan, fondu par la profondeur. Donne la
  * sensation de traverser un espace cohérent entre les scènes.
  */

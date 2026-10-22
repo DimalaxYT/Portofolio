@@ -2,7 +2,12 @@
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import {
+  Bloom,
+  ChromaticAberration,
+  EffectComposer,
+  Vignette,
+} from "@react-three/postprocessing";
 import { PerformanceMonitor } from "@react-three/drei/core/PerformanceMonitor";
 import * as THREE from "three";
 import type { Skill } from "@/lib/universe/content";
@@ -11,7 +16,7 @@ import type { RenderBudget } from "@/lib/universe/quality";
 import type { ScrollEngine } from "@/lib/universe/scroll";
 import type { UniverseProject } from "@/lib/universe/projects";
 import { createStudioEnvironment } from "./three/environment";
-import { InfiniteGrid } from "./three/infinite-grid";
+import { InfiniteGrid, StageFloor } from "./three/infinite-grid";
 import { ParticleField } from "./three/particles";
 import { RuntimeProvider, SCENE_GAP, type UniverseRuntime } from "./three/runtime";
 import { HeroWorld } from "./scenes/hero-world";
@@ -71,9 +76,11 @@ const SKY_FRAGMENT = /* glsl */ `
   uniform vec3 uGlow;
   void main() {
     float h = vDir.y * 0.5 + 0.5;
-    vec3 color = mix(uBottom, uTop, smoothstep(0.05, 0.95, h));
-    float band = pow(max(0.0, 1.0 - abs(vDir.y * 1.6)), 6.0);
-    color += uGlow * band * 0.4;
+    vec3 color = mix(uBottom, uTop, smoothstep(0.02, 0.9, h));
+    // Halo chaud à l'horizon + légère remontée d'accent au zénith.
+    float band = pow(max(0.0, 1.0 - abs(vDir.y * 1.35)), 5.0);
+    color += uGlow * band * 0.55;
+    color += uGlow * pow(max(0.0, vDir.y), 7.0) * 0.18;
     gl_FragColor = vec4(color, 1.0);
   }
 `;
@@ -90,8 +97,8 @@ function SkyDome({ runtime }: { runtime: UniverseRuntime }) {
         depthWrite: false,
         uniforms: {
           uTop: { value: new THREE.Color(ATMOSPHERE[0].bg) },
-          uBottom: { value: new THREE.Color("#020305") },
-          uGlow: { value: new THREE.Color(runtime.accent).multiplyScalar(0.12) },
+          uBottom: { value: new THREE.Color("#04060a") },
+          uGlow: { value: new THREE.Color(runtime.accent).multiplyScalar(0.5) },
         },
         vertexShader: SKY_VERTEX,
         fragmentShader: SKY_FRAGMENT,
@@ -130,7 +137,7 @@ function SkyDome({ runtime }: { runtime: UniverseRuntime }) {
 
 /** Brouillard + déplacement de caméra pilotés par le scroll. */
 function CameraRig({ runtime }: { runtime: UniverseRuntime }) {
-  const { camera, scene } = useThree();
+  const { camera, scene, size } = useThree();
   const fog = useMemo(() => new THREE.FogExp2(ATMOSPHERE[0].fog, 0.02), []);
   const fromColor = useMemo(() => new THREE.Color(), []);
   const toColor = useMemo(() => new THREE.Color(), []);
@@ -163,7 +170,10 @@ function CameraRig({ runtime }: { runtime: UniverseRuntime }) {
     );
 
     // Caméra : avance sur le parcours + parallaxe + rapprochement à l'interaction.
-    const targetZ = -f * SCENE_GAP + 9.4 + focus * 2.6;
+    // Recul selon le format : en portrait le champ visible est étroit.
+    const aspect = size.width / Math.max(1, size.height);
+    const baseDistance = aspect < 1 ? 13.4 : aspect < 1.4 ? 11.2 : 9.8;
+    const targetZ = -f * SCENE_GAP + baseDistance + focus * 2.6;
     camera.position.z = THREE.MathUtils.damp(camera.position.z, targetZ, 4.2, dt);
     camera.position.x = THREE.MathUtils.damp(
       camera.position.x,
@@ -173,14 +183,14 @@ function CameraRig({ runtime }: { runtime: UniverseRuntime }) {
     );
     camera.position.y = THREE.MathUtils.damp(
       camera.position.y,
-      0.2 + engine.state.py * 0.6,
+      0.45 + engine.state.py * 0.6,
       2.6,
       dt,
     );
 
     lookAt.set(
       engine.state.px * 0.5,
-      0.1 + engine.state.py * 0.32,
+      0.32 + engine.state.py * 0.32,
       camera.position.z - SCENE_GAP * 0.72,
     );
     camera.lookAt(lookAt);
@@ -211,7 +221,8 @@ function EnvironmentRig({
     if (!enabled) return;
     const environment = createStudioEnvironment(gl, accent);
     scene.environment = environment.texture;
-    scene.environmentIntensity = 1;
+    // Au-dessus de 1 : le studio HDR doit dominer le rendu des métaux.
+    scene.environmentIntensity = 1.6;
     return () => {
       scene.environment = null;
       environment.dispose();
@@ -310,7 +321,8 @@ export function UniverseCanvas(props: UniverseCanvasProps) {
       onCreated={({ gl, scene }) => {
         gl.setClearColor(new THREE.Color(ATMOSPHERE[0].bg), 1);
         gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.05;
+        // Exposition haute : indispensable pour que le métal reflète le studio.
+        gl.toneMappingExposure = 1.42;
         scene.matrixWorldAutoUpdate = true;
       }}
     >
@@ -326,22 +338,29 @@ export function UniverseCanvas(props: UniverseCanvasProps) {
             <EnvironmentRig accent={PALETTE.accent} enabled={budget.environment} />
             <FirstFrameSignal onFirstFrame={onFirstFrame} />
 
-            {/* Éclairage global : sobre, l'accent vient des lumières de scène. */}
+            {/* Éclairage global : le métal vit surtout de l'environnement,
+                ces lumières directes ne font que poser les arêtes. */}
             <hemisphereLight
-              args={["#8fa4bd", "#0a0c10", 0.42]}
+              args={["#a8bed8", "#1a1208", 0.75]}
               position={[0, 10, 0]}
             />
             <directionalLight
-              position={[6, 8, 6]}
-              intensity={1.15}
-              color="#dfe7f2"
+              position={[5, 7, 6]}
+              intensity={2.6}
+              color="#fff0dd"
             />
             <directionalLight
-              position={[-7, -3, -4]}
-              intensity={0.4}
-              color="#7f96b3"
+              position={[-6, 2, -3]}
+              intensity={1.5}
+              color="#8fb0d8"
+            />
+            <directionalLight
+              position={[0, -4, 5]}
+              intensity={0.9}
+              color={PALETTE.accent}
             />
 
+            <StageFloor length={pathLength} />
             <InfiniteGrid length={pathLength} accent={PALETTE.accent} />
             <ParticleField
               count={budget.particles}
@@ -357,13 +376,18 @@ export function UniverseCanvas(props: UniverseCanvasProps) {
             {budget.postprocessing && (
               <EffectComposer enableNormalPass={false} multisampling={0}>
                 <Bloom
-                  intensity={0.62}
-                  luminanceThreshold={0.68}
-                  luminanceSmoothing={0.3}
+                  intensity={1.35}
+                  luminanceThreshold={0.42}
+                  luminanceSmoothing={0.24}
                   mipmapBlur
-                  radius={0.74}
+                  radius={0.86}
                 />
-                <Vignette offset={0.26} darkness={0.72} eskil={false} />
+                <ChromaticAberration
+                  offset={new THREE.Vector2(0.00075, 0.0011)}
+                  radialModulation
+                  modulationOffset={0.42}
+                />
+                <Vignette offset={0.22} darkness={0.82} eskil={false} />
               </EffectComposer>
             )}
           </Suspense>

@@ -149,8 +149,8 @@ export function AboutWorld({ index }: { index: number }) {
       <pointLight
         position={[0, 4, 4]}
         color={accent}
-        intensity={8}
-        distance={20}
+        intensity={150}
+        distance={30}
         decay={2}
       />
 
@@ -161,9 +161,10 @@ export function AboutWorld({ index }: { index: number }) {
         frustumCulled={false}
       >
         <meshStandardMaterial
-          metalness={0.85}
-          roughness={0.34}
-          envMapIntensity={1.2}
+          color="#2a2f3a"
+          metalness={1}
+          roughness={0.17}
+          envMapIntensity={2.7}
         />
       </instancedMesh>
 
@@ -171,30 +172,31 @@ export function AboutWorld({ index }: { index: number }) {
       <mesh ref={slabARef} position={[2.4, 1.9, -1.2]}>
         <boxGeometry args={[3.1, 0.07, 1.5]} />
         <meshStandardMaterial
-          color="#3a3f48"
+          color="#3d434f"
           metalness={1}
-          roughness={0.22}
-          envMapIntensity={1.5}
+          roughness={0.1}
+          envMapIntensity={3.1}
         />
       </mesh>
       <mesh ref={slabBRef} position={[-2.8, -0.6, 0.6]}>
         <boxGeometry args={[2.4, 0.06, 2.2]} />
         <meshStandardMaterial
-          color="#2a2e35"
+          color="#2b303a"
           metalness={1}
-          roughness={0.3}
-          envMapIntensity={1.3}
+          roughness={0.14}
+          envMapIntensity={2.8}
         />
       </mesh>
       <mesh ref={slabCRef} position={[0.6, 0.7, 2.2]}>
         <boxGeometry args={[1.6, 0.05, 1.1]} />
         <meshStandardMaterial
           color={accent}
-          metalness={0.8}
-          roughness={0.28}
+          metalness={0.9}
+          roughness={0.16}
           emissive={accent}
-          emissiveIntensity={0.22}
-          envMapIntensity={1.4}
+          emissiveIntensity={1.8}
+          toneMapped={false}
+          envMapIntensity={2.4}
         />
       </mesh>
     </group>

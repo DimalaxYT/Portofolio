@@ -3,9 +3,13 @@ import * as THREE from "three";
 /**
  * CARTE D'ENVIRONNEMENT PROCÉDURALE (PMREM)
  * -----------------------------------------
- * Aucun fichier HDR téléchargé (rien ne dépend d'un CDN) : un petit studio
- * est rendu une seule fois dans une cubemap pré-filtrée, ce qui donne de
- * vrais reflets métalliques pour un coût quasi nul au runtime.
+ * Point critique de l'identité visuelle : les matériaux de l'expérience sont
+ * des métaux (`metalness: 1`). Un métal ne renvoie **aucune** lumière diffuse :
+ * sa couleur visible EST le reflet de son environnement. Un studio sombre
+ * donne donc des objets noirs — d'où un studio volontairement très lumineux,
+ * en HDR (valeurs > 1), rendu une seule fois dans une cubemap pré-filtrée.
+ *
+ * Aucun fichier HDR téléchargé : tout est généré ici, hors ligne.
  */
 
 const GRADIENT_VERTEX = /* glsl */ `
@@ -24,8 +28,8 @@ const GRADIENT_FRAGMENT = /* glsl */ `
   void main() {
     float h = vDir.y * 0.5 + 0.5;
     vec3 color = mix(uBottom, uTop, smoothstep(0.0, 1.0, h));
-    float band = pow(1.0 - abs(vDir.y), 8.0);
-    color += uHorizon * band * 0.55;
+    float band = pow(1.0 - abs(vDir.y), 6.0);
+    color += uHorizon * band;
     gl_FragColor = vec4(color, 1.0);
   }
 `;
@@ -36,8 +40,8 @@ export interface StudioEnvironment {
 }
 
 /**
- * Construit l'environnement. À appeler une fois par canvas, puis `dispose()`
- * au démontage (ressource GPU explicite).
+ * Construit le studio. À appeler une fois par canvas, puis `dispose()` au
+ * démontage (ressource GPU explicite).
  */
 export function createStudioEnvironment(
   renderer: THREE.WebGLRenderer,
@@ -51,24 +55,27 @@ export function createStudioEnvironment(
 
   const accentColor = new THREE.Color(accent);
 
-  // Dôme de dégradé : graphite profond en bas, gris froid en haut.
-  const domeGeometry = new THREE.SphereGeometry(12, 32, 20);
+  /* Dôme : gris froid lisible en haut, noir profond en bas, liseré d'accent
+     à l'horizon. Assez clair pour que le métal ait quelque chose à refléter. */
+  const domeGeometry = new THREE.SphereGeometry(14, 48, 32);
   const domeMaterial = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     uniforms: {
-      uTop: { value: new THREE.Color(0.09, 0.1, 0.13) },
-      uBottom: { value: new THREE.Color(0.008, 0.009, 0.012) },
-      uHorizon: { value: new THREE.Color(0.05, 0.055, 0.07) },
+      uTop: { value: new THREE.Color(0.34, 0.37, 0.45) },
+      uBottom: { value: new THREE.Color(0.012, 0.014, 0.02) },
+      uHorizon: { value: new THREE.Color(0.16, 0.13, 0.11) },
     },
     vertexShader: GRADIENT_VERTEX,
     fragmentShader: GRADIENT_FRAGMENT,
   });
-  const dome = new THREE.Mesh(domeGeometry, domeMaterial);
-  scene.add(dome);
+  scene.add(new THREE.Mesh(domeGeometry, domeMaterial));
   disposables.push(domeGeometry, domeMaterial);
 
-  // Panneaux émissifs > 1 : hautes lumières nettes sur les métaux.
+  /**
+   * Panneau émissif. `intensity` > 1 : la cubemap PMREM est en demi-flottant,
+   * les hautes lumières survivent et produisent des reflets nets sur le métal.
+   */
   const panel = (
     color: THREE.Color,
     intensity: number,
@@ -81,6 +88,7 @@ export function createStudioEnvironment(
     const material = new THREE.MeshBasicMaterial({
       color: color.clone().multiplyScalar(intensity),
       side: THREE.DoubleSide,
+      toneMapped: false,
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...position);
@@ -89,13 +97,30 @@ export function createStudioEnvironment(
     disposables.push(geometry, material);
   };
 
-  // Key chaude (accent) en haut à droite, fill froid à gauche, rim derrière.
-  panel(accentColor, 6.5, 5, 3, [6, 5, 3], [0, -Math.PI / 3, 0]);
-  panel(new THREE.Color("#9fc6e8"), 2.4, 6, 4, [-7, 2, -1], [0, Math.PI / 2.6, 0]);
-  panel(new THREE.Color("#ffffff"), 3.2, 4, 1.2, [0, -6, -4], [Math.PI / 2.4, 0, 0]);
-  panel(accentColor, 1.6, 10, 0.35, [0, 1.6, -8], [0, 0, 0]);
+  const white = new THREE.Color("#ffffff");
+  const cool = new THREE.Color("#bcd6f2");
 
-  const target = pmrem.fromScene(scene, 0.035);
+  /* Key light : très large softbox au-dessus, légèrement en arrière.
+     C'est elle qui donne le large reflet brillant sur les faces supérieures. */
+  panel(white, 26, 15, 11, [0, 8.5, -3.5], [Math.PI / 2.35, 0, 0]);
+
+  /* Rim chaud à droite : dessine le contour et chauffe le métal. */
+  panel(accentColor, 34, 4.5, 12, [9, 2, -2], [0, -Math.PI / 2.4, 0]);
+
+  /* Rim froid à gauche : sépare l'objet du fond, évite l'effet « tout cuivre ». */
+  panel(cool, 20, 4.5, 12, [-9, 2.5, -1], [0, Math.PI / 2.4, 0]);
+
+  /* Bandeau d'accent face caméra : reflet fin et très brillant, presque une
+     arête de lumière sur les surfaces polies. */
+  panel(accentColor, 48, 13, 0.7, [0, 2.6, 10], [0, Math.PI, 0]);
+
+  /* Second bandeau, plus bas et plus froid, pour un reflet double. */
+  panel(cool, 16, 11, 0.5, [0, -1.6, 10], [0, Math.PI, 0]);
+
+  /* Rebond au sol : débouche les dessous sans les rendre laiteux. */
+  panel(new THREE.Color("#8a7461"), 5.5, 14, 14, [0, -8, 0], [-Math.PI / 2, 0, 0]);
+
+  const target = pmrem.fromScene(scene, 0.02);
 
   disposables.forEach((item) => item.dispose());
   pmrem.dispose();

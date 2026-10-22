@@ -168,8 +168,8 @@ export function SkillsWorld({
       <pointLight
         position={[2, 3, 5]}
         color={accent}
-        intensity={9}
-        distance={22}
+        intensity={170}
+        distance={32}
         decay={2}
       />
 
@@ -177,7 +177,7 @@ export function SkillsWorld({
         <lineBasicMaterial
           color={accent}
           transparent
-          opacity={0.14}
+          opacity={0.3}
           depthWrite={false}
         />
       </lineSegments>
@@ -192,11 +192,11 @@ export function SkillsWorld({
       >
         <meshStandardMaterial
           color="#ffffff"
-          metalness={0.95}
-          roughness={0.24}
+          metalness={1}
+          roughness={0.09}
           emissive={accent}
-          emissiveIntensity={0.18}
-          envMapIntensity={1.8}
+          emissiveIntensity={0.5}
+          envMapIntensity={3.4}
         />
       </instancedMesh>
 
@@ -206,7 +206,7 @@ export function SkillsWorld({
         <meshBasicMaterial
           color={accent}
           transparent
-          opacity={0.12}
+          opacity={0.22}
           depthWrite={false}
         />
       </mesh>

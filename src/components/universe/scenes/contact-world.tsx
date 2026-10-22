@@ -195,8 +195,8 @@ export function ContactWorld({ index }: { index: number }) {
         ref={lightRef}
         position={[0, 0, 3]}
         color={accent}
-        intensity={14}
-        distance={28}
+        intensity={260}
+        distance={40}
         decay={2}
       />
 
@@ -204,10 +204,10 @@ export function ContactWorld({ index }: { index: number }) {
       <mesh>
         <torusGeometry args={[3.3, 0.13, 20, 160]} />
         <meshStandardMaterial
-          color="#3a3f49"
+          color="#454b58"
           metalness={1}
-          roughness={0.18}
-          envMapIntensity={2}
+          roughness={0.08}
+          envMapIntensity={3.4}
         />
       </mesh>
 
@@ -218,18 +218,19 @@ export function ContactWorld({ index }: { index: number }) {
           <meshStandardMaterial
             color={accent}
             emissive={accent}
-            emissiveIntensity={0.55}
-            metalness={0.9}
-            roughness={0.3}
+            emissiveIntensity={3}
+            toneMapped={false}
+            metalness={0.95}
+            roughness={0.16}
           />
         </mesh>
         <mesh rotation={[-0.22, 0.14, 0.3]}>
           <torusGeometry args={[4.7, 0.014, 8, 128]} />
           <meshStandardMaterial
-            color="#c9ccd4"
+            color="#dfe3ea"
             metalness={1}
-            roughness={0.16}
-            envMapIntensity={2}
+            roughness={0.07}
+            envMapIntensity={3.6}
           />
         </mesh>
         <mesh rotation={[0.3, -0.2, 0.1]}>
@@ -237,9 +238,10 @@ export function ContactWorld({ index }: { index: number }) {
           <meshStandardMaterial
             color={accent}
             emissive={accent}
-            emissiveIntensity={0.4}
-            metalness={0.9}
-            roughness={0.3}
+            emissiveIntensity={2.4}
+            toneMapped={false}
+            metalness={0.95}
+            roughness={0.18}
           />
         </mesh>
       </group>
